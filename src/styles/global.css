@@ -486,6 +486,32 @@ select:focus {
   background: rgba(10, 147, 150, 0.08);
 }
 
+.mermaid-diagram {
+  margin: 1.2em 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-muted);
+  padding: 12px;
+  overflow-x: auto;
+}
+
+.mermaid-diagram svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.mermaid-diagram svg text,
+.mermaid-diagram svg tspan,
+.mermaid-diagram .label,
+.mermaid-diagram .nodeLabel,
+.mermaid-diagram .edgeLabel,
+.mermaid-diagram foreignObject div,
+.mermaid-diagram foreignObject span {
+  font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif !important;
+}
+
 .toc-panel {
   position: sticky;
   top: 24px;

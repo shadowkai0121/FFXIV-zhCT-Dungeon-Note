@@ -123,5 +123,82 @@ const isNavItemActive = (href: string): boolean => {
       <p>© {new Date().getFullYear()} FF14 繁中攻略筆記</p>
       <p>本站內容為整理摘要，完整資訊請以官方與原作者資料為準。</p>
     </footer>
+
+    <script>
+      const renderMermaidDiagrams = async () => {
+        const blocks = Array.from(
+          document.querySelectorAll(
+            "pre[data-language='mermaid'] > code, pre > code.language-mermaid",
+          ),
+        );
+        if (blocks.length === 0) {
+          return;
+        }
+
+        let mermaid;
+        try {
+          const module = await import("mermaid");
+          mermaid = module.default;
+        } catch (error) {
+          console.warn("[mermaid] Failed to load mermaid module.", error);
+          return;
+        }
+
+        mermaid.initialize({
+          startOnLoad: false,
+          securityLevel: "strict",
+          theme: "default",
+          fontFamily: '"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif',
+          flowchart: {
+            htmlLabels: false,
+            useMaxWidth: true,
+          },
+          themeVariables: {
+            fontFamily: '"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif',
+          },
+        });
+
+        let index = 0;
+        const uniqueBlocks = new Set(blocks);
+        for (const block of uniqueBlocks) {
+          const pre = block.parentElement;
+          if (!pre) {
+            continue;
+          }
+
+          const definition = block.textContent?.trim();
+          if (!definition) {
+            continue;
+          }
+
+          try {
+            const graphId = `mermaid-diagram-${index++}`;
+            const { svg, bindFunctions } = await mermaid.render(graphId, definition);
+            const container = document.createElement("div");
+            container.className = "mermaid-diagram";
+            container.innerHTML = svg;
+            pre.replaceWith(container);
+
+            if (typeof bindFunctions === "function") {
+              bindFunctions(container);
+            }
+          } catch (error) {
+            console.warn("[mermaid] Failed to render diagram block.", error);
+          }
+        }
+      };
+
+      if (document.readyState === "loading") {
+        document.addEventListener(
+          "DOMContentLoaded",
+          () => {
+            void renderMermaidDiagrams();
+          },
+          { once: true },
+        );
+      } else {
+        void renderMermaidDiagrams();
+      }
+    </script>
   </body>
 </html>
