@@ -1,0 +1,127 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  noIndex?: boolean;
+}
+
+const {
+  title,
+  description = "FF14 繁中高難副本攻略資料庫，聚焦絕、零式、極副本，提供可搜尋、可追蹤版本的攻略筆記。",
+  image = "/images/og-cover.svg",
+  noIndex = false,
+} = Astro.props;
+
+const siteName = "FF14 繁中攻略筆記";
+const fullTitle = `${title} | ${siteName}`;
+const canonical = new URL(Astro.url.pathname, Astro.site).toString();
+const ogImage = image.startsWith("http") ? image : new URL(image, Astro.site).toString();
+const gaId = (import.meta.env.PUBLIC_GA_MEASUREMENT_ID || "G-6EKYJCTHVP").trim();
+const baseUrl = import.meta.env.BASE_URL;
+const withBase = (path: string): string => `${baseUrl}${path.replace(/^\//, "")}`;
+const currentPath = (() => {
+  const path = Astro.url.pathname;
+  if (!path.startsWith(baseUrl)) {
+    return path;
+  }
+
+  const relative = path.slice(baseUrl.length);
+  return `/${relative}`;
+})();
+const navItems = [
+  { href: "/", label: "首頁" },
+  { href: "/guides/", label: "攻略列表" },
+  { href: "/updates/", label: "更新" },
+  { href: "/about/", label: "關於" },
+];
+
+const isNavItemActive = (href: string): boolean => {
+  if (href === "/") {
+    return currentPath === "/";
+  }
+
+  return currentPath === href || currentPath.startsWith(href);
+};
+---
+
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="canonical" href={canonical} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    {noIndex && <meta name="robots" content="noindex, nofollow" />}
+
+    {
+      gaId && (
+        <>
+          <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}></script>
+          <script define:vars={{ gaId }}>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+              dataLayer.push(arguments);
+            }
+            window.gtag = gtag;
+            gtag("js", new Date());
+            gtag("config", gaId);
+          </script>
+        </>
+      )
+    }
+  </head>
+  <body>
+    <div class="bg-orb bg-orb-a" aria-hidden="true"></div>
+    <div class="bg-orb bg-orb-b" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="brand" href={withBase("/")}>
+        <span class="brand-mark">FF14</span>
+        <span class="brand-text">繁中攻略筆記</span>
+      </a>
+      <nav aria-label="主選單">
+        <ul class="nav-list">
+          {
+            navItems.map((item) => {
+              const isActive = isNavItemActive(item.href);
+              return (
+                <li>
+                  <a class:list={{ "is-active": isActive }} href={withBase(item.href)}>{item.label}</a>
+                </li>
+              );
+            })
+          }
+        </ul>
+      </nav>
+    </header>
+
+    <main class="site-main">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <p>© {new Date().getFullYear()} FF14 繁中攻略筆記</p>
+      <p>本站內容為整理摘要，完整資訊請以官方與原作者資料為準。</p>
+    </footer>
+  </body>
+</html>

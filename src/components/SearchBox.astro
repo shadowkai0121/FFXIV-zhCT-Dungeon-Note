@@ -1,0 +1,18 @@
+---
+interface Props {
+  id?: string;
+  name?: string;
+  placeholder?: string;
+}
+
+const {
+  id = "filter-q",
+  name = "q",
+  placeholder = "輸入關鍵字（機制、職業、減傷）",
+} = Astro.props;
+---
+
+<label class="field field-search" for={id}>
+  <span class="field-label">關鍵字搜尋</span>
+  <input id={id} name={name} type="search" placeholder={placeholder} autocomplete="off" />
+</label>

@@ -1,0 +1,26 @@
+---
+import Layout from "../components/Layout.astro";
+---
+
+<Layout title="關於本站" description="FF14 繁中攻略站定位與內容維護方式說明。">
+  <section class="section-block">
+    <div class="section-head">
+      <h1>關於本站</h1>
+      <p>這是一個專注 FF14 高難副本的繁中攻略資料庫，目標是讓團隊能在短時間找到可用資訊。</p>
+    </div>
+
+    <h2>內容原則</h2>
+    <ul>
+      <li>本站內容以摘要整理為主，不完整轉載外部攻略。</li>
+      <li>每篇均附上官方或社群原始來源，方便追溯。</li>
+      <li>標示校對日期與適用版本，避免讀到過期打法。</li>
+    </ul>
+
+    <h2>維護流程</h2>
+    <ol>
+      <li>遊戲改版後建立待更新清單。</li>
+      <li>逐篇確認機制是否變動並修正文案。</li>
+      <li>更新 `lastVerifiedAt` 並記錄到更新頁。</li>
+    </ol>
+  </section>
+</Layout>

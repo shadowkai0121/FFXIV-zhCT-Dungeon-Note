@@ -1,0 +1,35 @@
+---
+interface SourceLink {
+  title: string;
+  url: string;
+  source: "official" | "community" | "video";
+  note?: string;
+}
+
+interface Props {
+  sources: SourceLink[];
+}
+
+const { sources } = Astro.props;
+
+const sourceLabel = {
+  official: "官方",
+  community: "社群",
+  video: "影片",
+};
+---
+
+<section class="source-section" aria-label="參考來源">
+  <h2>參考來源</h2>
+  <ul>
+    {
+      sources.map((source) => (
+        <li>
+          <a href={source.url} target="_blank" rel="noreferrer noopener">{source.title}</a>
+          <span class="source-kind">{sourceLabel[source.source]}</span>
+          {source.note && <p>{source.note}</p>}
+        </li>
+      ))
+    }
+  </ul>
+</section>

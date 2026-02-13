@@ -1,0 +1,36 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../components/Layout.astro";
+
+const guides = (await getCollection("guides", ({ data }) => data.status === "published")).sort(
+  (a, b) => Date.parse(b.data.lastVerifiedAt) - Date.parse(a.data.lastVerifiedAt),
+);
+const withBase = (path: string): string => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
+---
+
+<Layout title="更新紀錄" description="依校對日期查看 FF14 高難攻略更新清單。">
+  <section class="section-block">
+    <div class="section-head">
+      <h1>更新紀錄</h1>
+      <p>每次改版後以手動校對更新，日期越新代表可信度越高。</p>
+    </div>
+
+    <ul class="guide-grid">
+      {
+        guides.map((guide, index) => (
+          <li style={`--index:${index}`}>
+            <article class="guide-card">
+              <h3><a href={withBase(`/guides/${guide.slug}/`)}>{guide.data.title}</a></h3>
+              <p class="guide-meta">
+                <span>最後校對：{guide.data.lastVerifiedAt}</span>
+                <span>Patch {guide.data.patch}</span>
+                <span>{guide.data.encounter}</span>
+              </p>
+              <p class="guide-summary">{guide.data.summary}</p>
+            </article>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</Layout>

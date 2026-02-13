@@ -1,0 +1,262 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../../components/Layout.astro";
+import FilterBar from "../../components/FilterBar.astro";
+import GuideCard from "../../components/GuideCard.astro";
+
+const guides = (await getCollection("guides", ({ data }) => data.status === "published")).sort(
+  (a, b) => Date.parse(b.data.lastVerifiedAt) - Date.parse(a.data.lastVerifiedAt),
+);
+const withBase = (path: string): string => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
+
+const patches = Array.from(new Set(guides.map((guide) => guide.data.patch))).sort((a, b) => b.localeCompare(a));
+const tags = Array.from(new Set(guides.flatMap((guide) => guide.data.tags))).sort((a, b) => a.localeCompare(b, "zh-Hant"));
+---
+
+<Layout
+  title="攻略列表"
+  description="依副本類型、版本、標籤與關鍵字篩選 FF14 7.x 高難攻略。"
+>
+  <section class="section-block">
+    <div class="section-head">
+      <h1>攻略列表</h1>
+      <p>支援類型/版本/標籤篩選，並可用關鍵字做站內搜尋。</p>
+    </div>
+
+    <FilterBar patches={patches} tags={tags} />
+
+    <div class="list-feedback" aria-live="polite">
+      <p id="visible-count">顯示 {guides.length} / {guides.length} 篇攻略</p>
+      <p id="search-status">尚未輸入關鍵字</p>
+    </div>
+
+    <p id="empty-state" class="empty-state" hidden>找不到符合條件的攻略，請調整篩選。</p>
+
+    <ul class="guide-grid" id="guide-list">
+      {
+        guides.map((guide, index) => (
+          <li
+            style={`--index:${index}`}
+            data-guide-card
+            data-slug={guide.slug}
+            data-type={guide.data.dutyType}
+            data-patch={guide.data.patch}
+            data-tags={guide.data.tags.join(",")}
+          >
+            <GuideCard
+              title={guide.data.title}
+              href={withBase(`/guides/${guide.slug}/`)}
+              dutyType={guide.data.dutyType}
+              patch={guide.data.patch}
+              summary={guide.data.summary}
+              tags={guide.data.tags}
+              lastVerifiedAt={guide.data.lastVerifiedAt}
+              encounter={guide.data.encounter}
+            />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <script type="module" define:vars={{ basePath: import.meta.env.BASE_URL }}>
+    const filterForm = document.getElementById("guide-filter-form");
+    if (!filterForm) {
+      console.warn("guide-filter-form not found");
+    } else {
+      const controls = {
+        type: document.getElementById("filter-type"),
+        patch: document.getElementById("filter-patch"),
+        tag: document.getElementById("filter-tag"),
+        q: document.getElementById("filter-q"),
+        reset: document.getElementById("filter-reset"),
+      };
+
+      const cards = Array.from(document.querySelectorAll("[data-guide-card]"));
+      const visibleCount = document.getElementById("visible-count");
+      const searchStatus = document.getElementById("search-status");
+      const emptyState = document.getElementById("empty-state");
+      const total = cards.length;
+      const state = { type: "", patch: "", tag: "", q: "" };
+      let pagefindPromise;
+      let searchToken = 0;
+      let inputTimer;
+      let lastTrackedTerm = "";
+
+      const normalize = (value) => (value ?? "").toString().trim();
+
+      const extractSlug = (url) => {
+        const match = url.match(/\/guides\/([^/?#]+)\/?$/);
+        return match ? decodeURIComponent(match[1]) : null;
+      };
+
+      const syncStateFromUrl = () => {
+        const params = new URLSearchParams(window.location.search);
+        state.type = normalize(params.get("type"));
+        state.patch = normalize(params.get("patch"));
+        state.tag = normalize(params.get("tag"));
+        state.q = normalize(params.get("q"));
+      };
+
+      const syncControlsFromState = () => {
+        controls.type.value = state.type;
+        controls.patch.value = state.patch;
+        controls.tag.value = state.tag;
+        controls.q.value = state.q;
+      };
+
+      const updateUrl = () => {
+        const params = new URLSearchParams();
+        if (state.type) params.set("type", state.type);
+        if (state.patch) params.set("patch", state.patch);
+        if (state.tag) params.set("tag", state.tag);
+        if (state.q) params.set("q", state.q);
+        const query = params.toString();
+        const nextUrl = query ? `?${query}` : window.location.pathname;
+        history.replaceState(null, "", nextUrl);
+      };
+
+      const matchStructured = (card) => {
+        if (state.type && card.dataset.type !== state.type) return false;
+        if (state.patch && (card.dataset.patch || "").toLowerCase() !== state.patch.toLowerCase()) return false;
+
+        if (state.tag) {
+          const tags = (card.dataset.tags || "")
+            .split(",")
+            .map((tag) => tag.trim().toLowerCase())
+            .filter(Boolean);
+
+          if (!tags.includes(state.tag.toLowerCase())) {
+            return false;
+          }
+        }
+
+        return true;
+      };
+
+      const ensurePagefind = async () => {
+        if (!pagefindPromise) {
+          pagefindPromise = import(`${basePath}pagefind/pagefind.js`);
+        }
+
+        return pagefindPromise;
+      };
+
+      const getSearchSlugs = async (keyword, token) => {
+        if (!keyword) {
+          return null;
+        }
+
+        try {
+          const pagefind = await ensurePagefind();
+          const result = await pagefind.search(keyword);
+          const slugs = new Set();
+
+          for (const item of result.results) {
+            if (token !== searchToken) {
+              return null;
+            }
+            const data = await item.data();
+            const slug = extractSlug(data.url);
+            if (slug) {
+              slugs.add(slug);
+            }
+          }
+
+          return slugs;
+        } catch (error) {
+          console.error("pagefind search failed", error);
+          return new Set();
+        }
+      };
+
+      const applyVisibility = (searchSlugs) => {
+        let visible = 0;
+
+        for (const card of cards) {
+          const structured = matchStructured(card);
+          const searchMatched = !searchSlugs || searchSlugs.has(card.dataset.slug);
+          const isVisible = structured && searchMatched;
+          card.hidden = !isVisible;
+          if (isVisible) visible += 1;
+        }
+
+        visibleCount.textContent = `顯示 ${visible} / ${total} 篇攻略`;
+        emptyState.hidden = visible !== 0;
+      };
+
+      const runFilter = async () => {
+        searchToken += 1;
+        const currentToken = searchToken;
+        const keyword = normalize(state.q);
+
+        searchStatus.textContent = keyword ? `搜尋中：${keyword}` : "尚未輸入關鍵字";
+
+        const searchSlugs = await getSearchSlugs(keyword, currentToken);
+        if (currentToken !== searchToken) {
+          return;
+        }
+
+        applyVisibility(searchSlugs);
+
+        if (keyword) {
+          searchStatus.textContent = searchSlugs ? `關鍵字：${keyword}` : "關鍵字搜尋失敗";
+          if (window.gtag && keyword !== lastTrackedTerm) {
+            window.gtag("event", "search", { search_term: keyword });
+            lastTrackedTerm = keyword;
+          }
+        } else {
+          searchStatus.textContent = "尚未輸入關鍵字";
+        }
+      };
+
+      const syncStateFromControls = () => {
+        state.type = normalize(controls.type.value);
+        state.patch = normalize(controls.patch.value);
+        state.tag = normalize(controls.tag.value);
+        state.q = normalize(controls.q.value);
+      };
+
+      controls.type.addEventListener("change", async () => {
+        syncStateFromControls();
+        updateUrl();
+        await runFilter();
+      });
+
+      controls.patch.addEventListener("change", async () => {
+        syncStateFromControls();
+        updateUrl();
+        await runFilter();
+      });
+
+      controls.tag.addEventListener("change", async () => {
+        syncStateFromControls();
+        updateUrl();
+        await runFilter();
+      });
+
+      controls.q.addEventListener("input", () => {
+        syncStateFromControls();
+        updateUrl();
+        clearTimeout(inputTimer);
+        inputTimer = setTimeout(() => {
+          runFilter();
+        }, 280);
+      });
+
+      controls.reset.addEventListener("click", async () => {
+        state.type = "";
+        state.patch = "";
+        state.tag = "";
+        state.q = "";
+        syncControlsFromState();
+        updateUrl();
+        await runFilter();
+      });
+
+      syncStateFromUrl();
+      syncControlsFromState();
+      runFilter();
+    }
+  </script>
+</Layout>

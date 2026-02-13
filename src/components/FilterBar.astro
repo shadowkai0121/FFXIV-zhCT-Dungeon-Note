@@ -1,0 +1,42 @@
+---
+import SearchBox from "./SearchBox.astro";
+
+interface Props {
+  patches: string[];
+  tags: string[];
+}
+
+const { patches, tags } = Astro.props;
+---
+
+<form id="guide-filter-form" class="filter-form" autocomplete="off">
+  <label class="field" for="filter-type">
+    <span class="field-label">副本類型</span>
+    <select id="filter-type" name="type">
+      <option value="">全部</option>
+      <option value="ultimate">絕</option>
+      <option value="savage">零式</option>
+      <option value="extreme">極</option>
+    </select>
+  </label>
+
+  <label class="field" for="filter-patch">
+    <span class="field-label">版本</span>
+    <select id="filter-patch" name="patch">
+      <option value="">全部</option>
+      {patches.map((patch) => <option value={patch}>{patch}</option>)}
+    </select>
+  </label>
+
+  <label class="field" for="filter-tag">
+    <span class="field-label">標籤</span>
+    <select id="filter-tag" name="tag">
+      <option value="">全部</option>
+      {tags.map((tag) => <option value={tag}>{tag}</option>)}
+    </select>
+  </label>
+
+  <SearchBox />
+
+  <button class="button-ghost" id="filter-reset" type="button">重設篩選</button>
+</form>

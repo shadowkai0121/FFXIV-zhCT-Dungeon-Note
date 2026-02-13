@@ -1,0 +1,115 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../components/Layout.astro";
+import GuideCard from "../components/GuideCard.astro";
+
+const guides = (await getCollection("guides", ({ data }) => data.status === "published")).sort(
+  (a, b) => Date.parse(b.data.lastVerifiedAt) - Date.parse(a.data.lastVerifiedAt),
+);
+
+const latestGuides = guides.slice(0, 6);
+const withBase = (path: string): string => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
+
+const dutyLabels = {
+  ultimate: "絕",
+  savage: "零式",
+  extreme: "極",
+};
+
+const counts = guides.reduce(
+  (acc, guide) => {
+    acc.total += 1;
+    acc[guide.data.dutyType] += 1;
+    return acc;
+  },
+  {
+    total: 0,
+    ultimate: 0,
+    savage: 0,
+    extreme: 0,
+  },
+);
+---
+
+<Layout title="首頁" description="FF14 繁中高難攻略首頁：快速查看絕、零式、極副本與最新更新。">
+  <section class="hero">
+    <h1>FF14 高難副本的繁中攻略資料庫</h1>
+    <p>
+      專注 7.x 絕、零式、極副本，提供可追蹤版本的機制筆記、團隊配置建議與外部參考連結。每篇攻略都標示校對日期，方便改版後快速判斷可用性。
+    </p>
+    <div class="hero-cta">
+      <a class="button" href={withBase("/guides/")}>前往攻略列表</a>
+      <a class="button-ghost" href={withBase("/updates/")}>查看更新紀錄</a>
+    </div>
+  </section>
+
+  <section class="section-block" aria-labelledby="overview-title">
+    <div class="section-head">
+      <h2 id="overview-title">目前收錄概況</h2>
+      <p>第一階段聚焦高難三類副本，先把查詢效率與版本追蹤打穩。</p>
+    </div>
+    <ul class="stats-grid">
+      <li>
+        <strong>{counts.total}</strong>
+        <span>總攻略數</span>
+      </li>
+      <li>
+        <strong>{counts.ultimate}</strong>
+        <span>絕副本</span>
+      </li>
+      <li>
+        <strong>{counts.savage}</strong>
+        <span>零式</span>
+      </li>
+      <li>
+        <strong>{counts.extreme}</strong>
+        <span>極副本</span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="section-block" aria-labelledby="category-title">
+    <div class="section-head">
+      <h2 id="category-title">依類型瀏覽</h2>
+      <p>先按副本等級切入，再用版本與標籤縮小範圍。</p>
+    </div>
+    <ul class="category-grid">
+      {
+        Object.entries(dutyLabels).map(([key, label]) => (
+          <li>
+            <a href={withBase(`/guides/?type=${key}`)}>
+              <strong>{label}</strong>
+              <p>查看 {label} 相關攻略與常見機制整理。</p>
+              <small>目前 {counts[key as keyof typeof counts]} 篇</small>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="section-block" aria-labelledby="latest-title">
+    <div class="section-head">
+      <h2 id="latest-title">最新校對內容</h2>
+      <p>優先顯示最近校對過的攻略，避免拿到過舊資訊。</p>
+    </div>
+    <ul class="guide-grid">
+      {
+        latestGuides.map((guide, index) => (
+          <li style={`--index:${index}`}>
+            <GuideCard
+              title={guide.data.title}
+              href={withBase(`/guides/${guide.slug}/`)}
+              dutyType={guide.data.dutyType}
+              patch={guide.data.patch}
+              summary={guide.data.summary}
+              tags={guide.data.tags}
+              lastVerifiedAt={guide.data.lastVerifiedAt}
+              encounter={guide.data.encounter}
+            />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</Layout>

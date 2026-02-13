@@ -1,0 +1,107 @@
+---
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import Layout from "../../components/Layout.astro";
+import SourceLinks from "../../components/SourceLinks.astro";
+
+interface PaginationLink {
+  title: string;
+  slug: string;
+}
+
+interface Props {
+  entry: CollectionEntry<"guides">;
+  previous: PaginationLink | null;
+  next: PaginationLink | null;
+}
+
+export async function getStaticPaths() {
+  const guides = (await getCollection("guides", ({ data }) => data.status === "published")).sort(
+    (a, b) => Date.parse(a.data.lastVerifiedAt) - Date.parse(b.data.lastVerifiedAt),
+  );
+
+  return guides.map((entry, index) => ({
+    params: { slug: entry.slug },
+    props: {
+      entry,
+      previous:
+        index > 0
+          ? {
+              title: guides[index - 1].data.title,
+              slug: guides[index - 1].slug,
+            }
+          : null,
+      next:
+        index < guides.length - 1
+          ? {
+              title: guides[index + 1].data.title,
+              slug: guides[index + 1].slug,
+            }
+          : null,
+    },
+  }));
+}
+
+const { entry, previous, next } = Astro.props as Props;
+const { Content, headings } = await render(entry);
+const withBase = (path: string): string => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
+
+const typeLabelMap = {
+  ultimate: "絕",
+  savage: "零式",
+  extreme: "極",
+};
+---
+
+<Layout title={entry.data.title} description={entry.data.summary}>
+  <div class="detail-layout">
+    <article class="detail-article" data-pagefind-body>
+      <header>
+        <p class="guide-meta">
+          <span class="chip">{typeLabelMap[entry.data.dutyType]}</span>
+          <span>Patch {entry.data.patch}</span>
+          <span>{entry.data.encounter}</span>
+          {entry.data.itemLevel && <span>建議裝等 i{entry.data.itemLevel}</span>}
+        </p>
+        <h1 data-pagefind-meta="title">{entry.data.title}</h1>
+        <p class="intro" data-pagefind-meta="summary">{entry.data.summary}</p>
+        <p class="article-meta">
+          <span>最後校對：{entry.data.lastVerifiedAt}</span>
+          <span>狀態：{entry.data.status}</span>
+        </p>
+      </header>
+
+      <Content />
+
+      {
+        entry.data.videos && entry.data.videos.length > 0 && (
+          <section class="video-list" aria-label="影片參考">
+            <h2>影片參考</h2>
+            <ul>
+              {entry.data.videos.map((videoUrl) => <li><a href={videoUrl}>{videoUrl}</a></li>)}
+            </ul>
+          </section>
+        )
+      }
+
+      <SourceLinks sources={entry.data.sources} />
+
+      <nav class="detail-pagination" aria-label="上下篇攻略">
+        {previous ? <a href={withBase(`/guides/${previous.slug}/`)}>← {previous.title}</a> : <span></span>}
+        {next ? <a href={withBase(`/guides/${next.slug}/`)}>{next.title} →</a> : <span></span>}
+      </nav>
+    </article>
+
+    <aside class="toc-panel" aria-label="文章目錄">
+      <h2>文章目錄</h2>
+      {
+        headings.length > 0 ? (
+          <ul>
+            {headings.filter((heading) => heading.depth <= 3).map((heading) => <li><a href={`#${heading.slug}`}>{heading.text}</a></li>)}
+          </ul>
+        ) : (
+          <p>本篇暫無標題目錄。</p>
+        )
+      }
+    </aside>
+  </div>
+</Layout>

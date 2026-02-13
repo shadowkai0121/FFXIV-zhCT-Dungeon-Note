@@ -1,0 +1,40 @@
+---
+type DutyType = "ultimate" | "savage" | "extreme";
+
+interface Props {
+  title: string;
+  href: string;
+  dutyType: DutyType;
+  patch: string;
+  summary: string;
+  tags: string[];
+  lastVerifiedAt: string;
+  encounter: string;
+}
+
+const { title, href, dutyType, patch, summary, tags, lastVerifiedAt, encounter } = Astro.props;
+
+const dutyLabelMap: Record<DutyType, string> = {
+  ultimate: "絕",
+  savage: "零式",
+  extreme: "極",
+};
+---
+
+<article class={`guide-card duty-${dutyType}`}>
+  <header>
+    <p class="guide-meta">
+      <span class="chip">{dutyLabelMap[dutyType]}</span>
+      <span>Patch {patch}</span>
+      <span>{encounter}</span>
+    </p>
+    <h3>
+      <a href={href}>{title}</a>
+    </h3>
+  </header>
+  <p class="guide-summary">{summary}</p>
+  <ul class="tag-list" aria-label="標籤">
+    {tags.map((tag) => <li>{tag}</li>)}
+  </ul>
+  <p class="guide-updated">最後校對：{lastVerifiedAt}</p>
+</article>

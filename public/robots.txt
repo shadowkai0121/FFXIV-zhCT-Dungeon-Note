@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://shadowkai0121.github.io/FFXIV-zhCT-Dungeon-Note/sitemap-index.xml
