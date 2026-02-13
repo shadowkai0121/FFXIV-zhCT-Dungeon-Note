@@ -52,8 +52,8 @@ const typeLabelMap = {
 };
 ---
 
-<Layout title={entry.data.title} description={entry.data.summary}>
-  <div class="detail-layout">
+<Layout title={entry.data.title} description={entry.data.summary} fullWidth={true}>
+  <div class="detail-layout detail-layout--full">
     <article class="detail-article" data-pagefind-body>
       <header>
         <p class="guide-meta">
@@ -90,18 +90,101 @@ const typeLabelMap = {
         {next ? <a href={withBase(`/guides/${next.slug}/`)}>{next.title} →</a> : <span></span>}
       </nav>
     </article>
-
-    <aside class="toc-panel" aria-label="文章目錄">
-      <h2>文章目錄</h2>
-      {
-        headings.length > 0 ? (
-          <ul>
-            {headings.filter((heading) => heading.depth <= 3).map((heading) => <li><a href={`#${heading.slug}`}>{heading.text}</a></li>)}
-          </ul>
-        ) : (
-          <p>本篇暫無標題目錄。</p>
-        )
-      }
-    </aside>
   </div>
+
+  <aside class="toc-floating" data-toc-floating aria-label="文章目錄控制">
+    <button class="toc-floating__trigger" type="button" data-toc-open aria-controls="floating-toc-panel" aria-expanded="false">
+      大綱
+    </button>
+
+    <section class="toc-floating__panel" id="floating-toc-panel" data-toc-panel hidden>
+      <header class="toc-floating__header">
+        <h2>文章目錄</h2>
+        <div class="toc-floating__actions">
+          <button type="button" data-toc-collapse aria-expanded="true">縮小</button>
+          <button type="button" data-toc-hide>隱藏</button>
+        </div>
+      </header>
+
+      <div class="toc-floating__body" data-toc-body>
+        {
+          headings.length > 0 ? (
+            <ul>
+              {headings.filter((heading) => heading.depth <= 3).map((heading) => <li><a href={`#${heading.slug}`}>{heading.text}</a></li>)}
+            </ul>
+          ) : (
+            <p>本篇暫無標題目錄。</p>
+          )
+        }
+      </div>
+    </section>
+  </aside>
+
+  <script>
+    const initFloatingToc = () => {
+      const root = document.querySelector("[data-toc-floating]");
+      if (!root) {
+        return;
+      }
+
+      const openButton = root.querySelector("[data-toc-open]");
+      const panel = root.querySelector("[data-toc-panel]");
+      const collapseButton = root.querySelector("[data-toc-collapse]");
+      const hideButton = root.querySelector("[data-toc-hide]");
+      const body = root.querySelector("[data-toc-body]");
+
+      if (!(openButton instanceof HTMLButtonElement)) {
+        return;
+      }
+      if (!(panel instanceof HTMLElement)) {
+        return;
+      }
+      if (!(collapseButton instanceof HTMLButtonElement)) {
+        return;
+      }
+      if (!(hideButton instanceof HTMLButtonElement)) {
+        return;
+      }
+      if (!(body instanceof HTMLElement)) {
+        return;
+      }
+
+      const setOpen = (open: boolean) => {
+        panel.hidden = !open;
+        openButton.setAttribute("aria-expanded", String(open));
+      };
+
+      const setCollapsed = (collapsed: boolean) => {
+        root.classList.toggle("is-collapsed", collapsed);
+        body.hidden = collapsed;
+        collapseButton.textContent = collapsed ? "展開" : "縮小";
+        collapseButton.setAttribute("aria-expanded", String(!collapsed));
+      };
+
+      openButton.addEventListener("click", () => {
+        setOpen(panel.hidden);
+      });
+
+      collapseButton.addEventListener("click", () => {
+        setCollapsed(!root.classList.contains("is-collapsed"));
+      });
+
+      hideButton.addEventListener("click", () => {
+        setOpen(false);
+      });
+
+      root.addEventListener("click", (event) => {
+        if (!(event.target instanceof HTMLElement) || event.target.tagName !== "A") {
+          return;
+        }
+        setOpen(false);
+      });
+    };
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initFloatingToc, { once: true });
+    } else {
+      initFloatingToc();
+    }
+  </script>
 </Layout>

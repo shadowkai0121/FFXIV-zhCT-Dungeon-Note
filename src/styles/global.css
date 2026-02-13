@@ -137,6 +137,11 @@ a:focus-visible {
   animation: rise-in 480ms ease both;
 }
 
+.site-main.site-main--full {
+  width: 100%;
+  max-width: none;
+}
+
 @keyframes rise-in {
   from {
     opacity: 0;
@@ -435,9 +440,7 @@ select:focus {
 }
 
 .detail-layout {
-  display: grid;
-  grid-template-columns: 1fr 270px;
-  gap: 22px;
+  width: 100%;
 }
 
 .detail-article {
@@ -445,6 +448,11 @@ select:focus {
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: clamp(18px, 3vw, 30px);
+}
+
+.detail-layout--full .detail-article {
+  width: 100%;
+  max-width: none;
 }
 
 .detail-article h1 {
@@ -534,6 +542,86 @@ select:focus {
   gap: 7px;
 }
 
+.toc-floating {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.toc-floating__trigger {
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  padding: 10px 14px;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(10, 26, 38, 0.18);
+}
+
+.toc-floating__panel {
+  width: min(320px, calc(100vw - 32px));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 16px 30px rgba(10, 26, 38, 0.22);
+  overflow: hidden;
+}
+
+.toc-floating__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-muted);
+}
+
+.toc-floating__header h2 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.toc-floating__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.toc-floating__actions button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 0.76rem;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.toc-floating__body {
+  max-height: min(58vh, 520px);
+  overflow: auto;
+  padding: 10px 12px 14px;
+}
+
+.toc-floating__body ul {
+  margin: 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 7px;
+}
+
+.toc-floating.is-collapsed .toc-floating__panel {
+  width: min(260px, calc(100vw - 32px));
+}
+
 .source-section {
   margin-top: 26px;
   border-top: 1px dashed var(--border);
@@ -595,10 +683,6 @@ select:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .detail-layout {
-    grid-template-columns: 1fr;
-  }
-
   .toc-panel {
     position: static;
   }
@@ -628,5 +712,14 @@ select:focus {
 
   .hero h1 {
     max-width: 100%;
+  }
+
+  .toc-floating {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .toc-floating__panel {
+    width: min(300px, calc(100vw - 24px));
   }
 }

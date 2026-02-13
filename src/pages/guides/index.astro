@@ -59,7 +59,7 @@ const tags = Array.from(new Set(guides.flatMap((guide) => guide.data.tags))).sor
     </ul>
   </section>
 
-  <script type="module" define:vars={{ basePath: import.meta.env.BASE_URL }}>
+  <script is:inline type="module" define:vars={{ basePath: import.meta.env.BASE_URL }}>
     const filterForm = document.getElementById("guide-filter-form");
     if (!filterForm) {
       console.warn("guide-filter-form not found");

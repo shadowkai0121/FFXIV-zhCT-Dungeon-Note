@@ -6,6 +6,7 @@ interface Props {
   description?: string;
   image?: string;
   noIndex?: boolean;
+  fullWidth?: boolean;
 }
 
 const {
@@ -13,6 +14,7 @@ const {
   description = "FF14 繁中高難副本攻略資料庫，聚焦絕、零式、極副本，提供可搜尋、可追蹤版本的攻略筆記。",
   image = "/images/og-cover.svg",
   noIndex = false,
+  fullWidth = false,
 } = Astro.props;
 
 const siteName = "FF14 繁中攻略筆記";
@@ -76,8 +78,8 @@ const isNavItemActive = (href: string): boolean => {
     {
       gaId && (
         <>
-          <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}></script>
-          <script define:vars={{ gaId }}>
+          <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}></script>
+          <script is:inline define:vars={{ gaId }}>
             window.dataLayer = window.dataLayer || [];
             function gtag() {
               dataLayer.push(arguments);
@@ -115,7 +117,7 @@ const isNavItemActive = (href: string): boolean => {
       </nav>
     </header>
 
-    <main class="site-main">
+    <main class:list={["site-main", { "site-main--full": fullWidth }]}>
       <slot />
     </main>
 
