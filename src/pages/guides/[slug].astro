@@ -93,11 +93,11 @@ const typeLabelMap = {
   </div>
 
   <aside class="toc-floating" data-toc-floating aria-label="文章目錄控制">
-    <button class="toc-floating__trigger" type="button" data-toc-open aria-controls="floating-toc-panel" aria-expanded="false">
+    <button class="toc-floating__trigger" type="button" data-toc-open aria-controls="floating-toc-panel" aria-expanded="true">
       大綱
     </button>
 
-    <section class="toc-floating__panel" id="floating-toc-panel" data-toc-panel hidden>
+    <section class="toc-floating__panel" id="floating-toc-panel" data-toc-panel>
       <header class="toc-floating__header">
         <h2>文章目錄</h2>
         <div class="toc-floating__actions">
@@ -123,8 +123,12 @@ const typeLabelMap = {
   <script>
     const initFloatingToc = () => {
       const root = document.querySelector("[data-toc-floating]");
-      if (!root) {
+      if (!(root instanceof HTMLElement)) {
         return;
+      }
+
+      if (root.parentElement !== document.body) {
+        document.body.appendChild(root);
       }
 
       const openButton = root.querySelector("[data-toc-open]");
